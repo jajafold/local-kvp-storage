@@ -24,6 +24,12 @@ class Storage:
 
         self._entries.append(Entry(key=key, value=value, target_bucket=bucket, next=_old_index))
 
+    def _search_through_chain(self, key: object, entry: Entry) -> object:
+        if entry.key != key:
+            return self._search_through_chain(key, self._entries[entry.next])
+
+        return entry
+
     def add(self, key: object, value: object):
         if self.length == self._capacity:
             self._rehash()
@@ -40,13 +46,16 @@ class Storage:
 
     def get_by(self, key: object) -> object:
         _hash, _bucket = self._compute_hash_and_bucket(key)
-        _value = None
+        _entry = None
 
         if self._buckets[_bucket] == -1:
             raise KeyError("Key not found")
 
-        _value = self._entries[self._buckets[_bucket]]
-        return _value.value
+        _entry = self._entries[self._buckets[_bucket]]
+        if _entry.next != -1:
+            _entry = self._search_through_chain(key, _entry)
+
+        return _entry.value
 
     @property
     def keys(self):

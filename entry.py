@@ -6,6 +6,10 @@ class Entry:
         self._next = next
 
     @property
+    def next(self):
+        return self._next
+
+    @property
     def key(self):
         return self._key
 

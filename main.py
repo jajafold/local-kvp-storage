@@ -12,7 +12,7 @@ if __name__ == "__main__":
     _kvp = Storage()
     _simple = Simple_class()
 
-    _kvp.add(1, 2)
+    _kvp.add("1", 2)
     _kvp.add("key_abc", "value_123")
     _kvp.add("key_abce", "value_maybe_collision")
     _kvp.add("key_array", [1, 2, 3])
@@ -20,3 +20,6 @@ if __name__ == "__main__":
 
     for entry in _kvp._entries:
         print(f"B[{entry._bucket}] -> {entry.value} | NEXT: {entry._next}")
+
+    _key = input("key = ")
+    print(_kvp.get_by(_key))
