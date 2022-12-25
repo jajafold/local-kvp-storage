@@ -1,4 +1,6 @@
 from entry import Entry
+from hashlib import sha256
+import json
 
 
 class Storage:
@@ -7,9 +9,16 @@ class Storage:
         self.length = 0
         self._buckets = [-1 for _ in range(self._capacity)]
         self._entries = []
+        self._encoder = json.encoder.JSONEncoder()
+
+    def _encode_object(self, o: object) -> bytes:
+        _encoded = self._encoder.encode(o)
+        return _encoded.encode()
 
     def _compute_hash_and_bucket(self, key: object) -> (int, int):
-        _hash = key.__hash__() & 0x7FFFFFFF
+        _sha256 = sha256(self._encode_object(key))
+        _hash = int(_sha256.hexdigest(), 16) & 0x7FFFFFFF
+
         print(f"KEY: {key} | HASH: {_hash} | BUCKET: {_hash % self._capacity}")
         return _hash, _hash % self._capacity
 
