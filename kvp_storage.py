@@ -17,6 +17,14 @@ class Storage:
         self._buckets[_bucket] = self.length
         self._entries.append(Entry(key=key, value=value, target_bucket=_bucket))
 
+    @property
+    def keys(self):
+        return [_entry.key for _entry in self._entries]
+
+    @property
+    def values(self):
+        return [_entry.value for _entry in self._entries]
+
 
 
 

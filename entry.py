@@ -5,4 +5,12 @@ class Entry:
         self._bucket = target_bucket
         self._next = -1
 
+    @property
+    def key(self):
+        return self._key
+
+    @property
+    def value(self):
+        return self._value
+
 
