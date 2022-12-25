@@ -17,11 +17,22 @@ class Storage:
         # TODO: реализовать функцию перехегирования таблицы
         raise NotImplementedError
 
+    def _build_chain(self, key: object, value: object, bucket: int):
+        _old_index = self._buckets[bucket]
+        self._buckets[bucket] = self.length
+        self.length += 1
+
+        self._entries.append(Entry(key=key, value=value, target_bucket=bucket, next=_old_index))
+
     def add(self, key: object, value: object):
         if self.length == self._capacity:
             self._rehash()
 
         _hash, _bucket = self._compute_hash_and_bucket(key)
+        if self._buckets[_bucket] != -1:
+            self._build_chain(key, value, _bucket)
+            return
+
         self._buckets[_bucket] = self.length
         self.length += 1
 

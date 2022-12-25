@@ -1,9 +1,9 @@
 class Entry:
-    def __init__(self, key: object, value: object, target_bucket: int):
+    def __init__(self, key: object, value: object, target_bucket: int, next: int = -1):
         self._key = key
         self._value = value
         self._bucket = target_bucket
-        self._next = -1
+        self._next = next
 
     @property
     def key(self):
