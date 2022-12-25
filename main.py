@@ -17,5 +17,4 @@ if __name__ == "__main__":
     _kvp.add("key_array", [1, 2, 3])
     _kvp.add("key_simple", _simple)
 
-    print(_kvp.keys)
-    print(_kvp.values)
+    print(_kvp.get_by("key_abc"))
