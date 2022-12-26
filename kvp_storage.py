@@ -1,18 +1,30 @@
+from datetime import datetime
 from entry import Entry
 from hashlib import sha256
 import jsonpickle
 import json
-from queue import Queue
 
 
 class Storage(object):
-    def __init__(self):
+    def __init__(self, dump_file_name: str = datetime.now().date()):
+        self._dump_file_name = f"{dump_file_name}.json"
         self._capacity = 29
         self.length = 0
+        self._encoder = json.encoder.JSONEncoder()
+        self.__initialize()
+
+    def __initialize(self):
         self._buckets = [-1 for _ in range(self._capacity)]
         self._entries = []
         self._free = []
-        self._encoder = json.encoder.JSONEncoder()
+
+    def __rehash(self):
+        self._capacity *= 2
+        _dump_entries = [_entry for _entry in self._entries]
+
+        self.__initialize()
+        for _entry in _dump_entries:
+            self.add(_entry.key, _entry.value)
 
     def _encode_object(self, o: object) -> bytes:
         _encoded = self._encoder.encode(o)
@@ -24,10 +36,6 @@ class Storage(object):
 
         print(f"KEY: {key} | HASH: {_hash} | BUCKET: {_hash % self._capacity}")
         return _hash, _hash % self._capacity
-
-    def _rehash(self):
-        # TODO: реализовать функцию перехегирования таблицы
-        raise NotImplementedError
 
     def _build_chain(self, key: object, value: object, bucket: int):
         _old_index = self._buckets[bucket]
@@ -51,7 +59,7 @@ class Storage(object):
 
     def add(self, key: object, value: object):
         if self.length == self._capacity:
-            self._rehash()
+            self.__rehash()
 
         _hash, _bucket = self._compute_hash_and_bucket(key)
         if self._buckets[_bucket] != -1:
@@ -72,25 +80,34 @@ class Storage(object):
             self.length += 1
             self._entries[_free_index] = Entry(key=key, value=value, target_bucket=_bucket)
 
-    def _remove_without_chain(self, bucket):
-        self._entries[self._buckets[bucket]] = None
-        self._free.append(self._buckets[bucket])
-        self._buckets[bucket] = -1
-
-    def _remove_with_chain(self, bucket, target_entry):
-        raise NotImplementedError
-
     def remove(self, key: object):
-        _target_entry = self._get_entry_by(key)
-        _bucket = _target_entry.bucket
+        _hash, _bucket = self._compute_hash_and_bucket(key)
+        _previous_entry = None
 
-        if _target_entry.next == -1:
-            self._remove_without_chain(_bucket)
-        else:
-            self._remove_with_chain(_bucket, _target_entry)
+        if self._buckets[_bucket] == -1:
+            raise KeyError("Key not found")
+
+        _entry_to_delete = self._entries[self._buckets[_bucket]]
+        while _entry_to_delete.key != key:
+            _previous_entry = _entry_to_delete
+            _entry_to_delete = self._entries[_entry_to_delete.next]
+
+        print(f"TO DELETE: {_entry_to_delete.key} | {_entry_to_delete.value}")
 
         self.length -= 1
-        pass
+
+        if _previous_entry:
+            self._entries[_previous_entry._next] = None
+            self._free.append(_previous_entry._next)
+
+            _next_entry = _entry_to_delete.next
+            _previous_entry._next = _next_entry
+        else:
+            _next_entry = _entry_to_delete.next
+            self._buckets[_bucket] = _next_entry
+
+            self._entries[self._buckets[_bucket]] = None
+            self._free.append(_bucket)
 
     def _get_entry_by(self, key: object) -> Entry:
         _hash, _bucket = self._compute_hash_and_bucket(key)
@@ -109,7 +126,11 @@ class Storage(object):
         _entry = self._get_entry_by(key)
         return _entry.value
 
-    def save_to(self, filename):
+    def save(self):
+        with open(f"repository/{self._dump_file_name}", 'w') as f:
+            f.write(jsonpickle.encode(self, unpicklable=False))
+
+    def save_to(self, filename: str):
         with open(filename, 'w') as f:
             f.write(jsonpickle.encode(self, unpicklable=False))
 

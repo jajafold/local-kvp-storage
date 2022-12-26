@@ -20,17 +20,4 @@ if __name__ == "__main__":
     _kvp.add("key_simple", _simple)
     _kvp.multiple_add(keys, values)
 
-    print("--------------BEFORE--------------")
-    for entry in _kvp._entries:
-        print(f"B[{entry._bucket}] -> {entry.value} | NEXT: {entry._next}")
-
-    _kvp.remove("key_array")
-    print()
-    print("--------------AFTER--------------")
-    for entry in _kvp._entries:
-        if not entry:
-            continue
-        print(f"B[{entry._bucket}] -> {entry.value} | NEXT: {entry._next}")
-    _kvp.save_to("vasya.json")
-    a = Storage.load_from("vasya.json")
-    print(a.keys)
+    _kvp.save()
