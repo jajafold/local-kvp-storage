@@ -6,6 +6,10 @@ class Entry:
         self._next = next
 
     @property
+    def bucket(self):
+        return self._bucket
+
+    @property
     def next(self):
         return self._next
 

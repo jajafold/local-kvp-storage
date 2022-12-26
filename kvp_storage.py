@@ -1,6 +1,7 @@
 from entry import Entry
 from hashlib import sha256
 import json
+from queue import Queue
 
 
 class Storage:
@@ -9,6 +10,7 @@ class Storage:
         self.length = 0
         self._buckets = [-1 for _ in range(self._capacity)]
         self._entries = []
+        self._free = []
         self._encoder = json.encoder.JSONEncoder()
 
     def _encode_object(self, o: object) -> bytes:
@@ -28,9 +30,9 @@ class Storage:
 
     def _build_chain(self, key: object, value: object, bucket: int):
         _old_index = self._buckets[bucket]
-        self._buckets[bucket] = self.length
+        self._buckets[bucket] = len(self._entries)
         self.length += 1
-
+        # TODO: Проверка на free
         self._entries.append(Entry(key=key, value=value, target_bucket=bucket, next=_old_index))
 
     def _search_through_chain(self, key: object, entry: Entry) -> object:
@@ -39,21 +41,57 @@ class Storage:
 
         return entry
 
+    def multiple_add(self, keys: list[object], values: list[object]):
+        if len(keys) != len(values):
+            raise IndexError("Keys and values lists aren't the same length")
+
+        for key, value in zip(keys, values):
+            self.add(key, value)
+
     def add(self, key: object, value: object):
         if self.length == self._capacity:
             self._rehash()
 
         _hash, _bucket = self._compute_hash_and_bucket(key)
         if self._buckets[_bucket] != -1:
+
+            if self._entries[self._buckets[_bucket]].key == key:
+                raise KeyError("This key is already in storage")
+
             self._build_chain(key, value, _bucket)
             return
 
-        self._buckets[_bucket] = self.length
-        self.length += 1
+        if not self._free:
+            self._buckets[_bucket] = len(self._entries)
+            self.length += 1
+            self._entries.append(Entry(key=key, value=value, target_bucket=_bucket))
+        else:
+            _free_index = self._free.pop(0)
+            self._buckets[_bucket] = _free_index
+            self.length += 1
+            self._entries[_free_index] = Entry(key=key, value=value, target_bucket=_bucket)
 
-        self._entries.append(Entry(key=key, value=value, target_bucket=_bucket))
+    def _remove_without_chain(self, bucket):
+        self._entries[self._buckets[bucket]] = None
+        self._free.append(self._buckets[bucket])
+        self._buckets[bucket] = -1
 
-    def get_by(self, key: object) -> object:
+    def _remove_with_chain(self, bucket, target_entry):
+        raise NotImplementedError
+
+    def remove(self, key: object):
+        _target_entry = self._get_entry_by(key)
+        _bucket = _target_entry.bucket
+
+        if _target_entry.next == -1:
+            self._remove_without_chain(_bucket)
+        else:
+            self._remove_with_chain(_bucket, _target_entry)
+
+        self.length -= 1
+        pass
+
+    def _get_entry_by(self, key: object) -> Entry:
         _hash, _bucket = self._compute_hash_and_bucket(key)
         _entry = None
 
@@ -64,6 +102,10 @@ class Storage:
         if _entry.next != -1:
             _entry = self._search_through_chain(key, _entry)
 
+        return _entry
+
+    def get_by(self, key: object) -> object:
+        _entry = self._get_entry_by(key)
         return _entry.value
 
     @property
