@@ -1,10 +1,11 @@
 from entry import Entry
 from hashlib import sha256
+import jsonpickle
 import json
 from queue import Queue
 
 
-class Storage:
+class Storage(object):
     def __init__(self):
         self._capacity = 29
         self.length = 0
@@ -108,13 +109,34 @@ class Storage:
         _entry = self._get_entry_by(key)
         return _entry.value
 
+    def save_to(self, filename):
+        with open(filename, 'w') as f:
+            f.write(jsonpickle.encode(self, unpicklable=False))
+
+    @staticmethod
+    def load_from(filename):
+        with open(filename, 'r') as f:
+            raw_json = f.read()
+        result_str = jsonpickle.loads(raw_json, classes=[Storage, Entry, json.encoder.JSONEncoder])
+        return Storage._get_storage_from_string(result_str)
+
+    @staticmethod
+    def _get_storage_from_string(json_string):
+        result = Storage()
+        result._capacity = json_string['_capacity']
+        result.length = json_string['length']
+        result._buckets = json_string['_buckets']
+        result._entries = list(map(Entry.get_entry_by_string, json_string['_entries']))
+        result._free = json_string['_free']
+        return result
+
     @property
     def keys(self):
-        return [_entry.key for _entry in self._entries]
+        return [_entry.key for _entry in self._entries if _entry]
 
     @property
     def values(self):
-        return [_entry.value for _entry in self._entries]
+        return [_entry.value for _entry in self._entries if _entry]
 
 
 

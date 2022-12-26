@@ -31,3 +31,6 @@ if __name__ == "__main__":
         if not entry:
             continue
         print(f"B[{entry._bucket}] -> {entry.value} | NEXT: {entry._next}")
+    _kvp.save_to("vasya.json")
+    a = Storage.load_from("vasya.json")
+    print(a.keys)
