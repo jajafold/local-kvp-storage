@@ -1,8 +1,7 @@
 from datetime import datetime
 from entry import Entry
 from hashlib import sha256
-import jsonpickle
-import json
+from jsonpickle import encode, loads
 
 
 class Storage(object):
@@ -10,7 +9,6 @@ class Storage(object):
         self._dump_file_name = f"{dump_file_name}.json"
         self._capacity = 29
         self.length = 0
-        self._encoder = json.encoder.JSONEncoder()
         self.__initialize()
 
     def __initialize(self):
@@ -26,15 +24,15 @@ class Storage(object):
         for _entry in _dump_entries:
             self.add(_entry.key, _entry.value)
 
-    def _encode_object(self, o: object) -> bytes:
-        _encoded = self._encoder.encode(o)
+    @staticmethod
+    def _encode_object(o: object) -> bytes:
+        _encoded = encode(o)
         return _encoded.encode()
 
     def _compute_hash_and_bucket(self, key: object) -> (int, int):
-        _sha256 = sha256(self._encode_object(key))
+        _sha256 = sha256(Storage._encode_object(key))
         _hash = int(_sha256.hexdigest(), 16) & 0x7FFFFFFF
 
-        print(f"KEY: {key} | HASH: {_hash} | BUCKET: {_hash % self._capacity}")
         return _hash, _hash % self._capacity
 
     def _build_chain(self, key: object, value: object, bucket: int):
@@ -47,13 +45,11 @@ class Storage(object):
     def _search_through_chain(self, key: object, entry: Entry) -> object:
         if entry.key != key:
             return self._search_through_chain(key, self._entries[entry.next])
-
         return entry
 
     def multiple_add(self, keys: list[object], values: list[object]):
         if len(keys) != len(values):
             raise IndexError("Keys and values lists aren't the same length")
-
         for key, value in zip(keys, values):
             self.add(key, value)
 
@@ -122,23 +118,31 @@ class Storage(object):
 
         return _entry
 
-    def get_by(self, key: object) -> object:
+    def _get_by(self, key: object) -> object:
         _entry = self._get_entry_by(key)
         return _entry.value
 
     def save(self):
         with open(f"repository/{self._dump_file_name}", 'w') as f:
-            f.write(jsonpickle.encode(self, unpicklable=False))
+            f.write(encode(self, unpicklable=False))
 
     def save_to(self, filename: str):
         with open(filename, 'w') as f:
-            f.write(jsonpickle.encode(self, unpicklable=False))
+            f.write(encode(self, unpicklable=False))
+
+    def __getitem__(self, item):
+        return self._get_by(item)
+
+    def __setitem__(self, key, value):
+        if key in self.keys:
+            self.remove(key)
+        self.add(key, value)
 
     @staticmethod
     def load_from(filename):
         with open(filename, 'r') as f:
             raw_json = f.read()
-        result_str = jsonpickle.loads(raw_json, classes=[Storage, Entry, json.encoder.JSONEncoder])
+        result_str = loads(raw_json, classes=[Storage, Entry])
         return Storage._get_storage_from_string(result_str)
 
     @staticmethod
