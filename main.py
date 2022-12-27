@@ -7,8 +7,11 @@ def _invoke_user_commands(storage: Storage):
     while True:
         _command_str = input("> ")
         _command_args = _command_str.split()
+        if not _command_args:
+            continue
+        _command_type = _command_args[0].lower()
 
-        if _command_args[0].lower() == "exit":
+        if _command_type == "exit":
             return
 
         elif _command_args[0].lower() == "help":
@@ -18,6 +21,7 @@ def _invoke_user_commands(storage: Storage):
                 "   view\n"
                 "   keys\n"
                 "   values\n"
+                "   get <key>\n"
                 "   add <key> <value>\n"
                 "   m_add <key1>,<key2>,... <value1>,<value2>,...\n"
                 "   remove <key>\n"
@@ -26,28 +30,48 @@ def _invoke_user_commands(storage: Storage):
             )
             print(_help_str)
 
-        elif _command_args[0].lower() == "save":
+        elif _command_type == "save":
             storage.save()
             print(f"Successfully saved to ../repository/{storage._dump_file_name}")
 
-        elif _command_args[0].lower() == "view":
-            for _entry in storage._entries:
-                print(f"{_entry.key} : {_entry.value}")
+        elif _command_type == "view":
+            for key in storage.keys:
+                print(f"{key} : {storage[key]}")
 
-        elif _command_args[0].lower() == "keys":
+        elif _command_type == "keys":
             print("\n".join(storage.keys))
 
-        elif _command_args[0].lower() == "values":
+        elif _command_type == "values":
             print("\n".join(storage.values))
 
-        elif _command_args[0].lower() == "add":
-            raise NotImplementedError
+        elif _command_type == "add":
+            if len(_command_args) != 3:
+                print("Wrong usage")
+                continue
+            storage[_command_args[1]] = _command_args[2]
+            print(f"Successfully added as {_command_args[1]}:{_command_args[2]}")
 
-        elif _command_args[0].lower() == "m_add":
-            raise NotImplementedError
+        elif _command_type == "get":
+            if len(_command_args) != 2:
+                print("Wrong usage")
+                continue
+            print(storage[_command_args[1]])
 
-        elif _command_args[0].lower() == "remove":
-            raise NotImplementedError
+        elif _command_type == "m_add":
+            if len(_command_args) != 3:
+                print("Wrong usage")
+                continue
+            keys = _command_args[1].split(',')
+            values = _command_args[2].split(',')
+            storage.multiple_add(keys, values)
+            print(f"Successfully added keys {keys} with values {values}")
+
+        elif _command_type == "remove":
+            if len(_command_args) != 2:
+                print("Wrong usage")
+            key = _command_args[1]
+            storage.remove(key)
+            print(f"Successfully removed key {key}")
 
         else:
             print("Unknown command")
