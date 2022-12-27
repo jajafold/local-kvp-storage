@@ -82,13 +82,22 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(self.storage[complicated_key], 3)
 
     def test_collision(self):
-        self.storage = Storage(2)
-        key_one = 2
-        key_two = 5
+        self.storage = Storage(3)
+        key_one = 3
+        key_two = 6
         # buckets are equal
         self.storage[key_one] = 2
         self.storage[key_two] = 5
-        self.assertEqual(self.storage[2], 2)
-        self.assertEqual(self.storage[5], 5)
-        self.storage.remove(5)
-        self.assertTrue(5 not in self.storage.keys)
+        self.assertEqual(self.storage[key_one], 2)
+        self.assertEqual(self.storage[key_two], 5)
+        self.storage.remove(key_two)
+        self.assertTrue(key_two not in self.storage.keys)
+
+    def test_free(self):
+        self.storage = Storage()
+        complicated_key = SimpleClass()
+        self.storage[complicated_key] = 2
+        self.storage.remove(complicated_key)
+        simple_key = "5"
+        self.storage[simple_key] = 7
+        self.assertEqual(self.storage[simple_key], 7)
