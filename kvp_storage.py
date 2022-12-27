@@ -140,20 +140,23 @@ class Storage(object):
         self.add(key, value)
 
     @staticmethod
-    def load_from(filename):
-        with open(filename, 'r') as f:
+    def load_from(path):
+        with open(path, 'r') as f:
             raw_json = f.read()
         result_str = loads(raw_json, classes=[Storage, Entry])
+
         return Storage._get_storage_from_string(result_str)
 
     @staticmethod
     def _get_storage_from_string(json_string):
         result = Storage()
+        result._dump_file_name = json_string['_dump_file_name']
         result._capacity = json_string['_capacity']
         result.length = json_string['length']
         result._buckets = json_string['_buckets']
         result._entries = list(map(Entry.get_entry_by_string, json_string['_entries']))
         result._free = json_string['_free']
+
         return result
 
     @property
