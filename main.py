@@ -9,6 +9,5 @@ if __name__ == "__main__":
     _kvp["key_abc"] = "value_123"
     _kvp["key_array"] = [1, 2, 3]
     _kvp.multiple_add(keys, values)
-    _kvp["key_abc"] = "vavava"
 
     _kvp.save()

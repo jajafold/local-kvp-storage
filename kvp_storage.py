@@ -74,6 +74,8 @@ class Storage(object):
             _free_index = self._free.pop(0)
             self._buckets[_bucket] = _free_index
             self.length += 1
+
+            print(_free_index)
             self._entries[_free_index] = Entry(key=key, value=value, target_bucket=_bucket)
 
     def remove(self, key: object):
@@ -88,8 +90,7 @@ class Storage(object):
             _previous_entry = _entry_to_delete
             _entry_to_delete = self._entries[_entry_to_delete.next]
 
-        print(f"TO DELETE: {_entry_to_delete.key} | {_entry_to_delete.value}")
-
+        # print(f"TO DELETE: {_entry_to_delete.key} | {_entry_to_delete.value}")
         self.length -= 1
 
         if _previous_entry:
@@ -100,10 +101,10 @@ class Storage(object):
             _previous_entry._next = _next_entry
         else:
             _next_entry = _entry_to_delete.next
-            self._buckets[_bucket] = _next_entry
-
             self._entries[self._buckets[_bucket]] = None
-            self._free.append(_bucket)
+            self._free.append(self._buckets[_bucket])
+
+            self._buckets[_bucket] = _next_entry
 
     def _get_entry_by(self, key: object) -> Entry:
         _hash, _bucket = self._compute_hash_and_bucket(key)
