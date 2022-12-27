@@ -5,9 +5,9 @@ from jsonpickle import encode, loads
 
 
 class Storage(object):
-    def __init__(self, dump_file_name: str = datetime.now().date()):
+    def __init__(self, capacity=29, dump_file_name: str = datetime.now().date()):
         self._dump_file_name = f"{dump_file_name}.json"
-        self._capacity = 29
+        self._capacity = capacity
         self.length = 0
         self.__initialize()
 
@@ -162,7 +162,4 @@ class Storage(object):
     @property
     def values(self):
         return [_entry.value for _entry in self._entries if _entry]
-
-
-
 
