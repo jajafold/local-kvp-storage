@@ -1,3 +1,5 @@
+import os
+import pathlib
 from datetime import datetime
 from entry import Entry
 from hashlib import sha256
@@ -5,10 +7,12 @@ from jsonpickle import encode, loads
 
 
 class Storage(object):
-    def __init__(self, capacity=29, dump_file_name: str = datetime.now().date()):
+    def __init__(self, cluster_name: str, capacity=29, dump_file_name: str = datetime.now().date()):
         self._dump_file_name = f"{dump_file_name}.json"
+        self._cluster = cluster_name
         self._capacity = capacity
         self.length = 0
+
         self.__initialize()
 
     def __initialize(self):
@@ -23,6 +27,11 @@ class Storage(object):
         self.__initialize()
         for _entry in _dump_entries:
             self.add(_entry.key, _entry.value)
+
+    def __check_necessity(self):
+        if all([x == -1 for x in self._buckets]):
+            _file_to_remove = pathlib.Path(f"repository/{self._cluster}/{self._dump_file_name}")
+            os.remove(_file_to_remove)
 
     @staticmethod
     def _encode_object(o: object) -> bytes:
@@ -106,6 +115,8 @@ class Storage(object):
 
             self._buckets[_bucket] = _next_entry
 
+        self.__check_necessity()
+
     def _get_entry_by(self, key: object) -> Entry:
         _hash, _bucket = self._compute_hash_and_bucket(key)
         _entry = None
@@ -124,7 +135,7 @@ class Storage(object):
         return _entry.value
 
     def save(self):
-        with open(f"repository/{self._dump_file_name}", 'w') as f:
+        with open(f"repository/{self._cluster}/{self._dump_file_name}", 'w') as f:
             f.write(encode(self, unpicklable=False))
 
     def save_to(self, filename: str):
@@ -149,7 +160,8 @@ class Storage(object):
 
     @staticmethod
     def _get_storage_from_string(json_string):
-        result = Storage()
+        result = Storage("-")
+        result._cluster = json_string['_cluster']
         result._dump_file_name = json_string['_dump_file_name']
         result._capacity = json_string['_capacity']
         result.length = json_string['length']

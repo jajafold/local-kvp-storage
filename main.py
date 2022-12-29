@@ -1,9 +1,9 @@
-from kvp_storage import Storage
+from repo_manager import Manager
 import argparse
 import os
 
 
-def _invoke_user_commands(storage: Storage):
+def _invoke_user_commands(cluster_manager: Manager):
     while True:
         _command_str = input("> ")
         _command_args = _command_str.split()
@@ -19,6 +19,7 @@ def _invoke_user_commands(storage: Storage):
                 "Available commands:\n"
                 "   help\n"
                 "   view\n"
+                "   clusters\n"
                 "   keys\n"
                 "   values\n"
                 "   get <key>\n"
@@ -31,46 +32,58 @@ def _invoke_user_commands(storage: Storage):
             print(_help_str)
 
         elif _command_type == "save":
-            storage.save()
-            print(f"Successfully saved to ../repository/{storage._dump_file_name}")
+            cluster_manager.save()
+            print(f"Successfully saved to ../repository/{cluster_manager._cluster_name}")
 
         elif _command_type == "view":
-            for key in storage.keys:
-                print(f"{key} : {storage[key]}")
+            for key in cluster_manager.keys:
+                print(f"{key} : {cluster_manager[key]}")
+
+        elif _command_type == "clusters":
+            if len(_command_args) != 2:
+                print("Wrong usage")
+                continue
+
+            for _file in os.listdir(f'repository/{_command_args[1]}'):
+                print(f'  * {_file}')
 
         elif _command_type == "keys":
-            print("\n".join(storage.keys))
+            print("\n".join(cluster_manager.keys))
 
         elif _command_type == "values":
-            print("\n".join(storage.values))
+            print("\n".join(cluster_manager.values))
 
         elif _command_type == "add":
             if len(_command_args) != 3:
                 print("Wrong usage")
                 continue
-            storage[_command_args[1]] = _command_args[2]
+            cluster_manager.add(_command_args[1], _command_args[2])
+            # cluster_manager[_command_args[1]] = _command_args[2]
             print(f"Successfully added as {_command_args[1]}:{_command_args[2]}")
 
         elif _command_type == "get":
             if len(_command_args) != 2:
                 print("Wrong usage")
                 continue
-            print(storage[_command_args[1]])
+            print(cluster_manager[_command_args[1]])
 
         elif _command_type == "m_add":
             if len(_command_args) != 3:
                 print("Wrong usage")
                 continue
+
             keys = _command_args[1].split(',')
             values = _command_args[2].split(',')
-            storage.multiple_add(keys, values)
+            cluster_manager.multiple_add(keys, values)
             print(f"Successfully added keys {keys} with values {values}")
 
         elif _command_type == "remove":
             if len(_command_args) != 2:
                 print("Wrong usage")
+                continue
+
             key = _command_args[1]
-            storage.remove(key)
+            cluster_manager.remove(key)
             print(f"Successfully removed key {key}")
 
         else:
@@ -80,18 +93,17 @@ def _invoke_user_commands(storage: Storage):
 if __name__ == "__main__":
     _parser = argparse.ArgumentParser(
         description="Local KVP storage", formatter_class=argparse.RawDescriptionHelpFormatter)
-    _parser.add_argument(dest="dump_file_name", help="Name of the storage dump file in the ../repository/")
+    _parser.add_argument(dest="dump_cluster_name", help="Name of the storage dump file in the ../repository/")
 
     _args = _parser.parse_args()
-    _file_name = _args.dump_file_name
-    _storage = None
+    _cluster_name = _args.dump_cluster_name
+    _cluster_manager = None
 
-    if not os.path.exists(f"repository/{_file_name}.json"):
-        _storage = Storage(dump_file_name=_file_name)
-        _storage.save()
-        print(f"CREATED {_file_name}.json")
+    if not os.path.exists(f"repository/{_cluster_name}"):
+        _cluster_manager = Manager(_cluster_name)
+        print(f"CREATED {_cluster_name} cluster")
     else:
-        _storage = Storage.load_from(f"repository/{_file_name}.json")
-        print(f"LOADED {_file_name}.json")
+        _cluster_manager = Manager(_cluster_name)
+        print(f"LOADED {_cluster_name} cluster")
 
-    _invoke_user_commands(_storage)
+    _invoke_user_commands(_cluster_manager)
