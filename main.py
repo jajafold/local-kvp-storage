@@ -1,4 +1,4 @@
-from repo_manager import Manager
+from cluster_manager import Manager
 import argparse
 import os
 
@@ -33,18 +33,18 @@ def _invoke_user_commands(cluster_manager: Manager):
 
         elif _command_type == "save":
             cluster_manager.save()
-            print(f"Successfully saved to ../repository/{cluster_manager._cluster_name}")
+            print(f"Successfully saved to ../repository/{cluster_manager._repository_name}")
 
         elif _command_type == "view":
             for key in cluster_manager.keys:
                 print(f"{key} : {cluster_manager[key]}")
 
         elif _command_type == "clusters":
-            if len(_command_args) != 2:
+            if len(_command_args) != 1:
                 print("Wrong usage")
                 continue
 
-            for _file in os.listdir(f'repository/{_command_args[1]}'):
+            for _file in os.listdir(f'repository/{cluster_manager._repository_name}'):
                 print(f'  * {_file}')
 
         elif _command_type == "keys":

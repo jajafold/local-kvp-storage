@@ -7,10 +7,11 @@ from jsonpickle import encode, loads
 
 
 class Storage(object):
-    def __init__(self, cluster_name: str, capacity=29, dump_file_name: str = datetime.now().date()):
+    def __init__(self, repository_name: str, capacity=29, dump_file_name: str = datetime.now().date()):
         self._dump_file_name = f"{dump_file_name}.json"
-        self._cluster = cluster_name
+        self._repository = repository_name
         self._capacity = capacity
+        self._max_capacity = 1000
         self.length = 0
 
         self.__initialize()
@@ -28,10 +29,11 @@ class Storage(object):
         for _entry in _dump_entries:
             self.add(_entry.key, _entry.value)
 
-    def __check_necessity(self):
+    def __check_necessity(self) -> bool:
         if all([x == -1 for x in self._buckets]):
-            _file_to_remove = pathlib.Path(f"repository/{self._cluster}/{self._dump_file_name}")
-            os.remove(_file_to_remove)
+            return False
+        else:
+            return True
 
     @staticmethod
     def _encode_object(o: object) -> bytes:
@@ -87,7 +89,7 @@ class Storage(object):
             print(_free_index)
             self._entries[_free_index] = Entry(key=key, value=value, target_bucket=_bucket)
 
-    def remove(self, key: object):
+    def remove(self, key: object) -> bool:
         _hash, _bucket = self._compute_hash_and_bucket(key)
         _previous_entry = None
 
@@ -115,7 +117,7 @@ class Storage(object):
 
             self._buckets[_bucket] = _next_entry
 
-        self.__check_necessity()
+        return self.__check_necessity()
 
     def _get_entry_by(self, key: object) -> Entry:
         _hash, _bucket = self._compute_hash_and_bucket(key)
@@ -135,7 +137,7 @@ class Storage(object):
         return _entry.value
 
     def save(self):
-        with open(f"repository/{self._cluster}/{self._dump_file_name}", 'w') as f:
+        with open(f"repository/{self._repository}/{self._dump_file_name}", 'w') as f:
             f.write(encode(self, unpicklable=False))
 
     def save_to(self, filename: str):
@@ -161,7 +163,7 @@ class Storage(object):
     @staticmethod
     def _get_storage_from_string(json_string):
         result = Storage("-")
-        result._cluster = json_string['_cluster']
+        result._repository = json_string['_cluster']
         result._dump_file_name = json_string['_dump_file_name']
         result._capacity = json_string['_capacity']
         result.length = json_string['length']
@@ -178,4 +180,8 @@ class Storage(object):
     @property
     def values(self):
         return [_entry.value for _entry in self._entries if _entry]
+
+    @property
+    def is_full(self):
+        return self.length >= self._max_capacity
 
