@@ -64,6 +64,13 @@ class Manager:
                 current_cluster._next = _candidate_cluster._index
                 return _candidate_cluster
 
+    def multiple_add(self, keys: list, values: list):
+        if len(keys) != len(values):
+            raise IndexError('Lists of keys and values must be the same size')
+
+        for key, value in zip(keys, values):
+            self.add(key, value)
+
     def add(self, key: str, value: str):
         _, _cluster_index = self._compute_hash_and_cluster(key)
         _cluster = None

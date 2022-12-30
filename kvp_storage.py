@@ -50,19 +50,13 @@ class Storage(object):
         _old_index = self._buckets[bucket]
         self._buckets[bucket] = len(self._entries)
         self.length += 1
-        # TODO: Проверка на free
+
         self._entries.append(Entry(key=key, value=value, target_bucket=bucket, next=_old_index))
 
     def _search_through_chain(self, key: object, entry: Entry) -> object:
         if entry.key != key:
             return self._search_through_chain(key, self._entries[entry.next])
         return entry
-
-    def multiple_add(self, keys: list[object], values: list[object]):
-        if len(keys) != len(values):
-            raise IndexError("Keys and values lists aren't the same length")
-        for key, value in zip(keys, values):
-            self.add(key, value)
 
     def add(self, key: object, value: object):
         if self.length == self._capacity:
@@ -101,7 +95,6 @@ class Storage(object):
             _previous_entry = _entry_to_delete
             _entry_to_delete = self._entries[_entry_to_delete.next]
 
-        # print(f"TO DELETE: {_entry_to_delete.key} | {_entry_to_delete.value}")
         self.length -= 1
 
         if _previous_entry:
@@ -136,14 +129,6 @@ class Storage(object):
         _entry = self._get_entry_by(key)
         return _entry.value
 
-    def save(self):
-        with open(f"repository/{self._repository}/{self._dump_file_name}", 'w') as f:
-            f.write(encode(self, unpicklable=False))
-
-    def save_to(self, filename: str):
-        with open(filename, 'w') as f:
-            f.write(encode(self, unpicklable=False))
-
     def __getitem__(self, item):
         return self._get_by(item)
 
@@ -151,27 +136,6 @@ class Storage(object):
         if key in self.keys:
             self.remove(key)
         self.add(key, value)
-
-    @staticmethod
-    def load_from(path):
-        with open(path, 'r') as f:
-            raw_json = f.read()
-        result_str = loads(raw_json, classes=[Storage, Entry])
-
-        return Storage._get_storage_from_string(result_str)
-
-    @staticmethod
-    def _get_storage_from_string(json_string):
-        result = Storage("-")
-        result._repository = json_string['_cluster']
-        result._dump_file_name = json_string['_dump_file_name']
-        result._capacity = json_string['_capacity']
-        result.length = json_string['length']
-        result._buckets = json_string['_buckets']
-        result._entries = list(map(Entry.get_entry_by_string, json_string['_entries']))
-        result._free = json_string['_free']
-
-        return result
 
     @property
     def keys(self):

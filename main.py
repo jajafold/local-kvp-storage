@@ -26,14 +26,9 @@ def _invoke_user_commands(cluster_manager: Manager):
                 "   add <key> <value>\n"
                 "   m_add <key1>,<key2>,... <value1>,<value2>,...\n"
                 "   remove <key>\n"
-                "   save\n"
                 "   exit\n"
             )
             print(_help_str)
-
-        elif _command_type == "save":
-            cluster_manager.save()
-            print(f"Successfully saved to ../repository/{cluster_manager._repository_name}")
 
         elif _command_type == "view":
             for key in cluster_manager.keys:
@@ -57,8 +52,8 @@ def _invoke_user_commands(cluster_manager: Manager):
             if len(_command_args) != 3:
                 print("Wrong usage")
                 continue
+
             cluster_manager.add(_command_args[1], _command_args[2])
-            # cluster_manager[_command_args[1]] = _command_args[2]
             print(f"Successfully added as {_command_args[1]}:{_command_args[2]}")
 
         elif _command_type == "get":
