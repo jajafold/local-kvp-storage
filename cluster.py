@@ -42,10 +42,6 @@ class Cluster:
         self._storage.add(key, value)
         self.__save()
 
-    def multiple_add(self, keys: list, values: list):
-        self._storage.multiple_add(keys, values)
-        self.__save()
-
     def remove(self, key: str) -> bool:
         _is_required = self._storage.remove(key)
         if not _is_required:
